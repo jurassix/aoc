@@ -6,94 +6,160 @@ const sample = `..X...
 XMAS.S
 .X....`;
 
-(async function main () {
-  const input = await readStdin(true);
-  console.log(input);
-
-  // horizontal, vertical, diagonal, written backwards, or even overlapping other words
-
-  // brute force could be to extend the dataset to contain all possible foldings
-  // then do a scan for XMAS|SAMX
-
-  // note preserving newlines prevents wrapping during search which is what we want
-  const inputRows = input.split('\n');
+function buildDataset(input: string, onChar: (char: string) => string) {
+  const inputRows = input.split("\n");
   const numRows = inputRows.length;
-  const numCols = inputRows[0].split('').length;
+  const numCols = inputRows[0].split("").length;
+  const dataset2d: string[][] = inputRows.map((row) =>
+    row.split("").map(onChar)
+  );
 
-  // pass one add all rows to the dataset
-  let dataset = input + '\n'; // preserve newlines add separator
-  console.log('pass 1, flattened', dataset);
+  return {
+    dataset2d,
+    numRows,
+    numCols,
+  };
+}
 
-  // for vertical and diagonal we need to have the data in a 2x2 matrix
-  const dataset2d: string[][] = inputRows.map(row => row.split(''));
+function flattenRows(dataset: string[][], numRows: number, numCols: number) {
+  let flattened = "";
+  for (let row = 0; row < numRows; row++) {
+    for (let col = 0; col < numCols; col++) {
+      flattened += dataset[row][col];
+    }
+    // add newline to separate rows
+    flattened += "\n";
+  }
+  return flattened + "\n";
+}
 
-  // pass two add all cols to the dataset
+function flattenCols(dataset: string[][], numRows: number, numCols: number) {
+  let flattened = "";
   for (let col = 0; col < numCols; col++) {
     for (let row = 0; row < numRows; row++) {
-      dataset += dataset2d[row][col];
+      flattened += dataset[row][col];
     }
     // add newline to separate cols
-    dataset += '\n';
+    flattened += "\n";
   }
-  console.log('pass 2, with cols', dataset);
+  return flattened + "\n";
+}
 
-  // pass three add all diagonals to the dataset
-  // note this might be different since I'm not sure diagonal
-  // wraps around they may be isolated...
+function flattenDiagonals(
+  dataset: string[][],
+  numRows: number,
+  numCols: number
+) {
+  let flattened = "";
 
   // top left to bottom right (scanning down)
-  for(let row = 0; row < numRows; row++) {
+  for (let row = 0; row < numRows; row++) {
     let currentRow = row;
     for (let col = 0; col < numCols && currentRow < numRows; col++) {
-      dataset += dataset2d[currentRow][col];
+      flattened += dataset[currentRow][col];
       currentRow++;
     }
     // add newline to separate diagonals
-    dataset += '\n';
+    flattened += "\n";
   }
-
-  console.log('pass 3, with diag', dataset);
 
   // top left to bottom right (scanning right)
   for (let col = 1; col < numCols; col++) {
     let currentCol = col;
     for (let row = 0; row < numRows && currentCol < numCols; row++) {
-      dataset += dataset2d[row][currentCol];
+      flattened += dataset[row][currentCol];
       currentCol++;
     }
     // add newline to separate diagonals
-    dataset += '\n';
+    flattened += "\n";
   }
-
-  console.log('pass 4, with diag', dataset);
 
   // top right to bottom left (scanning down)
   for (let row = 0; row < numRows; row++) {
     let currentRow = row;
-    for (let col = numCols-1; col >= 0 && currentRow < numRows; col--) {
-      dataset += dataset2d[currentRow][col];
+    for (let col = numCols - 1; col >= 0 && currentRow < numRows; col--) {
+      flattened += dataset[currentRow][col];
       currentRow++;
     }
     // add newline to separate diagonals
-    dataset += '\n';
+    flattened += "\n";
   }
 
-  console.log('pass 5, with diag', dataset);
-
   // top right to bottom left (scanning left)
-  for (let col = numCols-2; col >= 0; col--) {
+  for (let col = numCols - 2; col >= 0; col--) {
     let currentCol = col;
     for (let row = 0; row < numRows && currentCol >= 0; row++) {
-      dataset += dataset2d[row][currentCol];
+      flattened += dataset[row][currentCol];
       currentCol--;
     }
     // add newline to separate diagonals
-    dataset += '\n';
+    flattened += "\n";
   }
 
-  console.log('pass 6, with diag', dataset);
+  return flattened;
+}
 
-  // finally we need to scan the dataset for the word XMAS|SAMX
-  const total = dataset.match(/XMAS/g).length + dataset.match(/SAMX/g).length;
-  console.log('total XMAS|SAMX:', total);
-})()
+function flatten(
+  dataset: string[][],
+  numRows: number,
+  numCols: number,
+  ...types: ("rows" | "cols" | "diagonals")[]
+) {
+  let flattened = '';
+  // turn into a set to remove duplicates
+  for (const type of Array.from(new Set(types))) {
+    switch (type) {
+      case "rows":
+        flattened += flattenRows(dataset, numRows, numCols);
+        break;
+      case "cols":
+        flattened += flattenCols(dataset, numRows, numCols);
+        break;
+      case "diagonals":
+        flattened += flattenDiagonals(dataset, numRows, numCols);
+        break;
+    }
+  }
+
+  return flattened;
+}
+
+function getNumMatches(dataset: string, ...regexes: RegExp[]): number {
+  return regexes.reduce((acc, regexp) => {
+    return acc + (dataset.match(regexp) ?? []).length;
+  }, 0);
+}
+
+(async function main() {
+  const input = await readStdin(true);
+
+  // pt1
+  const datasetPt1 = buildDataset(input, (char) =>
+    /[XMAS]/.test(char) ? char : "."
+  );
+  const flattenedDataP1 = flatten(
+    datasetPt1.dataset2d,
+    datasetPt1.numRows,
+    datasetPt1.numCols,
+    "rows",
+    "cols",
+    "diagonals"
+  );
+  const totalPt1 = getNumMatches(flattenedDataP1, /XMAS/g, /SAMX/g);
+  console.log("pt1 total (XMAS|SAMX):", totalPt1);
+
+  // pt 2
+  const datasetPt2 = buildDataset(input, (char) =>
+    /[MAS]/.test(char) ? char : "."
+  );
+  const flattenedDataP2 = flatten(
+    datasetPt2.dataset2d,
+    datasetPt2.numRows,
+    datasetPt2.numCols,
+    "rows",
+    "cols",
+    "diagonals"
+  );
+  const totalPt2 = getNumMatches(flattenedDataP2, /MAS/g, /SAM/g);
+  console.log("pt1 total (MAS|SAM in X formation):", totalPt2);
+})();
