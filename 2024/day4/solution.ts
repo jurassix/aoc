@@ -21,6 +21,21 @@ function buildDataset(input: string, onChar: (char: string) => string) {
   };
 }
 
+function as3x3(dataset: string[][], numRows: number, numCols: number) {
+  // a list of 3x3 datasets
+  const datasets: string[][][] = [];
+  for (let row = 0; row < numRows - 2; row++) {
+    for (let col = 0; col < numCols - 2; col++) {
+      const dataset3x3 = [];
+      for (let r = row; r < row + 3; r++) {
+        dataset3x3.push(dataset[r].slice(col, col + 3));
+      }
+      datasets.push(dataset3x3);
+    }
+  }
+  return datasets;
+}
+
 function flattenRows(dataset: string[][], numRows: number, numCols: number) {
   let flattened = "";
   for (let row = 0; row < numRows; row++) {
@@ -105,7 +120,7 @@ function flatten(
   numCols: number,
   ...types: ("rows" | "cols" | "diagonals")[]
 ) {
-  let flattened = '';
+  let flattened = "";
   // turn into a set to remove duplicates
   for (const type of Array.from(new Set(types))) {
     switch (type) {
@@ -133,7 +148,7 @@ function getNumMatches(dataset: string, ...regexes: RegExp[]): number {
 (async function main() {
   const input = await readStdin(true);
 
-  // pt1
+  // pt1 - XMAS|SAMX
   const datasetPt1 = buildDataset(input, (char) =>
     /[XMAS]/.test(char) ? char : "."
   );
@@ -148,18 +163,24 @@ function getNumMatches(dataset: string, ...regexes: RegExp[]): number {
   const totalPt1 = getNumMatches(flattenedDataP1, /XMAS/g, /SAMX/g);
   console.log("pt1 total (XMAS|SAMX):", totalPt1);
 
-  // pt 2
+  // pt 2 - MAS X SAM (X formation)
   const datasetPt2 = buildDataset(input, (char) =>
     /[MAS]/.test(char) ? char : "."
   );
-  const flattenedDataP2 = flatten(
+  let totalPt2 = 0;
+  for (const dataset of as3x3(
     datasetPt2.dataset2d,
     datasetPt2.numRows,
-    datasetPt2.numCols,
-    "rows",
-    "cols",
-    "diagonals"
-  );
-  const totalPt2 = getNumMatches(flattenedDataP2, /MAS/g, /SAM/g);
-  console.log("pt1 total (MAS|SAM in X formation):", totalPt2);
+    datasetPt2.numCols
+  )) {
+    const flattenedDataP2 = flatten(dataset, 3, 3, "rows");
+    totalPt2 += getNumMatches(
+      flattenedDataP2,
+      /M.S\n.A.\nM.S/g,
+      /M.M\n.A.\nS.S/g,
+      /S.M\n.A.\nS.M/g,
+      /S.S\n.A.\nM.M/g
+    );
+  }
+  console.log("pt1 total (MAS X SAM in X formation):", totalPt2);
 })();
