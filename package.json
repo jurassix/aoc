@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "node dist/solution.js",
+    "start": "cd dist; node ./day4/solution.js",
     "build": "tsc"
   },
   "type": "module",
