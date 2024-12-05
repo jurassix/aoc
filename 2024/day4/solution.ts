@@ -67,48 +67,30 @@ function flattenDiagonals(
 ) {
   let flattened = "";
 
-  // top left to bottom right (scanning down)
-  for (let row = 0; row < numRows; row++) {
-    let currentRow = row;
-    for (let col = 0; col < numCols && currentRow < numRows; col++) {
-      flattened += dataset[currentRow][col];
-      currentRow++;
+  // top left to bottom right
+  for (let colOffset = 0; colOffset < numCols; colOffset++) {
+    for (let row = 0; row < numRows; row++) {
+      let currentRow = row;
+      for (let col = colOffset; col < numCols && currentRow < numRows; col++) {
+        flattened += dataset[currentRow][col];
+        currentRow++;
+      }
+      // add newline to separate diagonals
+      flattened += "\n";
     }
-    // add newline to separate diagonals
-    flattened += "\n";
-  }
-
-  // top left to bottom right (scanning right)
-  for (let col = 1; col < numCols; col++) {
-    let currentCol = col;
-    for (let row = 0; row < numRows && currentCol < numCols; row++) {
-      flattened += dataset[row][currentCol];
-      currentCol++;
-    }
-    // add newline to separate diagonals
-    flattened += "\n";
-  }
-
-  // top right to bottom left (scanning down)
-  for (let row = 0; row < numRows; row++) {
-    let currentRow = row;
-    for (let col = numCols - 1; col >= 0 && currentRow < numRows; col--) {
-      flattened += dataset[currentRow][col];
-      currentRow++;
-    }
-    // add newline to separate diagonals
-    flattened += "\n";
   }
 
   // top right to bottom left (scanning left)
-  for (let col = numCols - 2; col >= 0; col--) {
-    let currentCol = col;
-    for (let row = 0; row < numRows && currentCol >= 0; row++) {
-      flattened += dataset[row][currentCol];
-      currentCol--;
+  for (let colOffset = numCols - 1; colOffset >= 0; colOffset--) {
+    for (let row = 0; row < numRows; row++) {
+      let currentRow = row;
+      for (let col = numCols - colOffset; col >= 0 && currentRow < numRows; col--) {
+        flattened += dataset[currentRow][col];
+        currentRow++;
+      }
+      // add newline to separate diagonals
+      flattened += "\n";
     }
-    // add newline to separate diagonals
-    flattened += "\n";
   }
 
   return flattened;
