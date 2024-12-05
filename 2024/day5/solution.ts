@@ -39,7 +39,7 @@ function separatePages(
   const incorrectlyOrderedPages: string[][] = [];
   for (const page of pages) {
     let isValid = true;
-    for (let i = 0; i < page.length && isValid; i++) {
+    for (let i = 0; i < page.length; i++) {
       const key = page[i];
       // page contains both keys then it must come before
       if (pageOrderingDict.has(key)) {
@@ -48,6 +48,11 @@ function separatePages(
           // inspect previous entries
           if (rules.has(page[j])) {
             isValid = false;
+            // move element to correct spot
+            const [removed] = page.splice(i, 1);
+            page.splice(j, 0, removed);
+            // reset i to do another pass
+            i = -1;
             break;
           }
         }
@@ -81,4 +86,5 @@ function midPointSum(pages: string[][]) {
   console.log(orderedPages);
   console.log("Total part 1: ", midPointSum(orderedPages));
   console.log(incorrectlyOrderedPages);
+  console.log("Total part 2: ", midPointSum(incorrectlyOrderedPages));
 })();
